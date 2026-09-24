@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -21,16 +21,52 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/products`)
-      .then((response) => response.json())
-      .then((data) => {
+    async function loadProducts() {
+      try {
+        console.log(
+          "Loading products from:",
+          `${API_URL}/api/products`
+        );
+
+        const response = await fetch(
+          `${API_URL}/api/products`
+        );
+
+        console.log(
+          "API response status:",
+          response.status
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `API returned ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        console.log("Products received:", data);
+
+        if (!Array.isArray(data)) {
+          throw new Error(
+            "API did not return a product list"
+          );
+        }
+
         setProducts(data);
+      } catch (error) {
+        console.error(
+          "Unable to load products:",
+          error
+        );
+
+        setProducts([]);
+      } finally {
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Unable to load products:", error);
-        setLoading(false);
-      });
+      }
+    }
+
+    loadProducts();
   }, []);
 
   return (
@@ -233,7 +269,8 @@ export default function Home() {
             {products.map((product) => {
 
               const discount =
-                product.mrp && product.mrp > product.price
+                product.mrp &&
+                product.mrp > product.price
                   ? Math.round(
                       ((product.mrp - product.price) /
                         product.mrp) *
@@ -242,7 +279,10 @@ export default function Home() {
                   : 0;
 
               return (
-                <article className="productCard" key={product.id}>
+                <article
+                  className="productCard"
+                  key={product.id}
+                >
 
                   <div className="productImage">
 
@@ -258,7 +298,9 @@ export default function Home() {
                     ) : (
                       <div className="productPlaceholder">
                         <Package size={52} />
-                        <span>{product.category}</span>
+                        <span>
+                          {product.category}
+                        </span>
                       </div>
                     )}
 
@@ -279,10 +321,14 @@ export default function Home() {
                     <h3>{product.name}</h3>
 
                     <div className="priceRow">
-                      <strong>₹{product.price}</strong>
+                      <strong>
+                        ₹{product.price}
+                      </strong>
 
                       {product.mrp && (
-                        <del>₹{product.mrp}</del>
+                        <del>
+                          ₹{product.mrp}
+                        </del>
                       )}
                     </div>
 
@@ -312,13 +358,17 @@ export default function Home() {
       </section>
 
       {/* CATEGORY SECTION */}
-      <section className="categorySection" id="new">
+      <section
+        className="categorySection"
+        id="new"
+      >
 
         <div className="sectionHeader">
           <div>
             <span className="sectionEyebrow">
               EXPLORE
             </span>
+
             <h2>Shop by Category</h2>
           </div>
         </div>
@@ -361,4 +411,4 @@ export default function Home() {
 
     </main>
   );
-}           
+       }
