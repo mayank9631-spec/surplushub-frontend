@@ -1,16 +1,46 @@
-"use client";
+ "use client";
 
-import { Search, ShoppingCart, User, Menu, ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  ChevronDown,
+  ArrowRight,
+  ShieldCheck,
+  Truck,
+  Package,
+  Heart,
+} from "lucide-react";
+
+const API_URL = "https://surplushub-api.onrender.com";
 
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/products`)
+      .then((response) => response.json())
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Unable to load products:", error);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <main>
-      {/* Top announcement bar */}
+      {/* TOP BAR */}
       <div className="topBar">
         🚚 Verified surplus deals • Secure payments • Sellers across India
       </div>
 
-      {/* Main header */}
+      {/* HEADER */}
       <header className="header">
         <div className="headerInner">
 
@@ -18,25 +48,26 @@ export default function Home() {
             <Menu size={24} />
           </button>
 
-          {/* Logo */}
           <div className="logo">
             <span className="logoMark">S</span>
-            <span>Surplus<span className="logoAccent">Hub</span></span>
+            <span>
+              Surplus<span className="logoAccent">Hub</span>
+            </span>
           </div>
 
-          {/* Search */}
           <div className="searchBox">
             <Search size={21} />
+
             <input
               type="text"
               placeholder="Search surplus, overstock, products..."
             />
+
             <button className="searchButton">
               Search
             </button>
           </div>
 
-          {/* Header actions */}
           <div className="headerActions">
 
             <button className="headerAction">
@@ -58,7 +89,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="nav">
           <div className="navInner">
 
@@ -68,8 +98,8 @@ export default function Home() {
               <ChevronDown size={16} />
             </button>
 
-            <a href="#">Today's Deals</a>
-            <a href="#">New Arrivals</a>
+            <a href="#deals">Today's Deals</a>
+            <a href="#new">New Arrivals</a>
             <a href="#">Fashion</a>
             <a href="#">Electronics</a>
             <a href="#">Home & Living</a>
@@ -83,10 +113,13 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* Hero */}
+      {/* HERO */}
       <section className="hero">
         <div className="heroContent">
-          <span className="heroBadge">THE SURPLUS MARKETPLACE</span>
+
+          <span className="heroBadge">
+            THE SURPLUS MARKETPLACE
+          </span>
 
           <h1>
             Great products.
@@ -96,26 +129,28 @@ export default function Home() {
 
           <p>
             Discover genuine surplus, overstock and unsold inventory
-            from verified sellers across India.
+            from sellers across India.
           </p>
 
           <div className="heroButtons">
             <button className="primaryButton">
-              Explore Deals →
+              Explore Deals <ArrowRight size={17} />
             </button>
 
             <button className="secondaryButton">
               Sell Your Surplus
             </button>
           </div>
+
         </div>
 
         <div className="heroVisual">
+
           <div className="floatingCard cardOne">
             <span>🔥</span>
             <div>
               <strong>Today's Deal</strong>
-              <small>Up to 70% off</small>
+              <small>Great surplus prices</small>
             </div>
           </div>
 
@@ -126,38 +161,204 @@ export default function Home() {
           <div className="floatingCard cardTwo">
             <span>✓</span>
             <div>
-              <strong>Verified Sellers</strong>
-              <small>Trusted inventory</small>
+              <strong>Trusted Sellers</strong>
+              <small>Quality inventory</small>
             </div>
           </div>
+
         </div>
       </section>
 
-      {/* Trust strip */}
+      {/* TRUST */}
       <section className="trustStrip">
 
         <div>
-          <strong>✓ Verified Sellers</strong>
+          <ShieldCheck size={22} />
+          <strong>Verified Sellers</strong>
           <span>Business-verified suppliers</span>
         </div>
 
         <div>
-          <strong>₹ Smart Prices</strong>
+          <Package size={22} />
+          <strong>Smart Prices</strong>
           <span>Surplus means better value</span>
         </div>
 
         <div>
-          <strong>↻ Secure Orders</strong>
+          <ShieldCheck size={22} />
+          <strong>Secure Orders</strong>
           <span>Protected checkout experience</span>
         </div>
 
         <div>
-          <strong>🚚 Pan-India</strong>
+          <Truck size={22} />
+          <strong>Pan-India</strong>
           <span>Inventory from across India</span>
+        </div>
+
+      </section>
+
+      {/* PRODUCT SECTION */}
+      <section className="productSection" id="deals">
+
+        <div className="sectionHeader">
+          <div>
+            <span className="sectionEyebrow">
+              FRESH INVENTORY
+            </span>
+
+            <h2>Today's Surplus Deals</h2>
+
+            <p>
+              Real products currently available on SurplusHub.
+            </p>
+          </div>
+
+          <button className="viewAllButton">
+            View all <ArrowRight size={17} />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="loadingBox">
+            Loading live inventory...
+          </div>
+        ) : products.length === 0 ? (
+          <div className="emptyBox">
+            No products available yet.
+          </div>
+        ) : (
+          <div className="productGrid">
+
+            {products.map((product) => {
+
+              const discount =
+                product.mrp && product.mrp > product.price
+                  ? Math.round(
+                      ((product.mrp - product.price) /
+                        product.mrp) *
+                        100
+                    )
+                  : 0;
+
+              return (
+                <article className="productCard" key={product.id}>
+
+                  <div className="productImage">
+
+                    <button className="wishlistButton">
+                      <Heart size={18} />
+                    </button>
+
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                      />
+                    ) : (
+                      <div className="productPlaceholder">
+                        <Package size={52} />
+                        <span>{product.category}</span>
+                      </div>
+                    )}
+
+                    {discount > 0 && (
+                      <span className="discountBadge">
+                        {discount}% OFF
+                      </span>
+                    )}
+
+                  </div>
+
+                  <div className="productInfo">
+
+                    <span className="productCategory">
+                      {product.category}
+                    </span>
+
+                    <h3>{product.name}</h3>
+
+                    <div className="priceRow">
+                      <strong>₹{product.price}</strong>
+
+                      {product.mrp && (
+                        <del>₹{product.mrp}</del>
+                      )}
+                    </div>
+
+                    <div className="stockRow">
+                      <span>
+                        {product.stock} units available
+                      </span>
+
+                      <span>
+                        {product.condition}
+                      </span>
+                    </div>
+
+                    <button className="addCartButton">
+                      Add to Cart
+                    </button>
+
+                  </div>
+
+                </article>
+              );
+            })}
+
+          </div>
+        )}
+
+      </section>
+
+      {/* CATEGORY SECTION */}
+      <section className="categorySection" id="new">
+
+        <div className="sectionHeader">
+          <div>
+            <span className="sectionEyebrow">
+              EXPLORE
+            </span>
+            <h2>Shop by Category</h2>
+          </div>
+        </div>
+
+        <div className="categoryGrid">
+
+          <div className="categoryTile">
+            <span>👕</span>
+            <strong>Fashion</strong>
+            <small>Apparel & accessories</small>
+          </div>
+
+          <div className="categoryTile">
+            <span>📱</span>
+            <strong>Electronics</strong>
+            <small>Devices & accessories</small>
+          </div>
+
+          <div className="categoryTile">
+            <span>🏠</span>
+            <strong>Home & Living</strong>
+            <small>Home products</small>
+          </div>
+
+          <div className="categoryTile">
+            <span>🏭</span>
+            <strong>Industrial</strong>
+            <small>Business inventory</small>
+          </div>
+
+          <div className="categoryTile">
+            <span>📦</span>
+            <strong>Wholesale</strong>
+            <small>Bulk opportunities</small>
+          </div>
+
         </div>
 
       </section>
 
     </main>
   );
-        }
+}           
