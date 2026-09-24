@@ -12,6 +12,9 @@ import {
   Truck,
   Package,
   Heart,
+  X,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 const API_URL = "https://surplushub-api.onrender.com";
@@ -19,6 +22,9 @@ const API_URL = "https://surplushub-api.onrender.com";
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => {
     async function loadProducts() {
@@ -69,6 +75,123 @@ export default function Home() {
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem(
+        "surplushub-cart"
+      );
+
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
+    } catch (error) {
+      console.error(
+        "Unable to load saved cart:",
+        error
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "surplushub-cart",
+        JSON.stringify(cart)
+      );
+    } catch (error) {
+      console.error(
+        "Unable to save cart:",
+        error
+      );
+    }
+  }, [cart]);
+
+  function addToCart(product) {
+    setCart((currentCart) => {
+      const existing = currentCart.find(
+        (item) => item.id === product.id
+      );
+
+      if (existing) {
+        return currentCart.map((item) =>
+          item.id === product.id
+            ? {
+                ...item,
+                quantity: Math.min(
+                  item.quantity + 1,
+                  product.stock
+                ),
+              }
+            : item
+        );
+      }
+
+      return [
+        ...currentCart,
+        {
+          ...product,
+          quantity: 1,
+        },
+      ];
+    });
+
+    setCartOpen(true);
+  }
+
+  function increaseQuantity(productId) {
+    setCart((currentCart) =>
+      currentCart.map((item) => {
+        if (item.id !== productId) {
+          return item;
+        }
+
+        return {
+          ...item,
+          quantity: Math.min(
+            item.quantity + 1,
+            item.stock
+          ),
+        };
+      })
+    );
+  }
+
+  function decreaseQuantity(productId) {
+    setCart((currentCart) =>
+      currentCart
+        .map((item) => {
+          if (item.id !== productId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            quantity: item.quantity - 1,
+          };
+        })
+        .filter((item) => item.quantity > 0)
+    );
+  }
+
+  function removeFromCart(productId) {
+    setCart((currentCart) =>
+      currentCart.filter(
+        (item) => item.id !== productId
+      )
+    );
+  }
+
+  const cartCount = cart.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
+
+  const cartTotal = cart.reduce(
+    (total, item) =>
+      total + Number(item.price) * item.quantity,
+    0
+  );
+
   return (
     <main>
       {/* TOP BAR */}
@@ -114,8 +237,36 @@ export default function Home() {
               </span>
             </button>
 
-            <button className="headerAction">
-              <ShoppingCart size={24} />
+            <button
+              className="headerAction"
+              onClick={() => setCartOpen(true)}
+            >
+              <div style={{ position: "relative" }}>
+                <ShoppingCart size={24} />
+
+                {cartCount > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-10px",
+                      right: "-10px",
+                      background: "#e53935",
+                      color: "#fff",
+                      borderRadius: "50%",
+                      minWidth: "20px",
+                      height: "20px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+
               <span>
                 <small>Your</small>
                 <strong>Cart</strong>
@@ -169,7 +320,16 @@ export default function Home() {
           </p>
 
           <div className="heroButtons">
-            <button className="primaryButton">
+            <button
+              className="primaryButton"
+              onClick={() =>
+                document
+                  .getElementById("deals")
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                  })
+              }
+            >
               Explore Deals <ArrowRight size={17} />
             </button>
 
@@ -342,7 +502,12 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <button className="addCartButton">
+                    <button
+                      className="addCartButton"
+                      onClick={() =>
+                        addToCart(product)
+                      }
+                    >
                       Add to Cart
                     </button>
 
@@ -409,6 +574,226 @@ export default function Home() {
 
       </section>
 
+      {/* CART DRAWER */}
+      {cartOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 9999,
+          }}
+          onClick={() => setCartOpen(false)}
+        >
+          <div
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              height: "100%",
+              width: "min(420px, 100%)",
+              background: "#fff",
+              padding: "24px",
+              overflowY: "auto",
+              boxShadow: "-5px 0 20px rgba(0,0,0,0.15)",
+            }}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "24px",
+              }}
+            >
+              <h2 style={{ margin: 0 }}>
+                Your Cart
+              </h2>
+
+              <button
+                onClick={() =>
+                  setCartOpen(false)
+                }
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {cart.length === 0 ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "60px 10px",
+                }}
+              >
+                <ShoppingCart
+                  size={50}
+                  style={{
+                    marginBottom: "15px",
+                  }}
+                />
+
+                <h3>Your cart is empty</h3>
+
+                <p>
+                  Add a surplus product to get started.
+                </p>
+              </div>
+            ) : (
+              <>
+                {cart.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      borderBottom:
+                        "1px solid #eee",
+                      paddingBottom: "18px",
+                      marginBottom: "18px",
+                    }}
+                  >
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        gap: "15px",
+                      }}
+                    >
+                      <div>
+                        <strong>
+                          {item.name}
+                        </strong>
+
+                        <div
+                          style={{
+                            marginTop: "6px",
+                          }}
+                        >
+                          ₹{item.price}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          removeFromCart(item.id)
+                        }
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <X size={18} />
+                      </button>
+
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        marginTop: "12px",
+                      }}
+                    >
+
+                      <button
+                        onClick={() =>
+                          decreaseQuantity(
+                            item.id
+                          )
+                        }
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Minus size={15} />
+                      </button>
+
+                      <strong>
+                        {item.quantity}
+                      </strong>
+
+                      <button
+                        onClick={() =>
+                          increaseQuantity(
+                            item.id
+                          )
+                        }
+                        disabled={
+                          item.quantity >=
+                          item.stock
+                        }
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          cursor:
+                            item.quantity >=
+                            item.stock
+                              ? "not-allowed"
+                              : "pointer",
+                        }}
+                      >
+                        <Plus size={15} />
+                      </button>
+
+                    </div>
+
+                  </div>
+                ))}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent:
+                      "space-between",
+                    fontSize: "20px",
+                    fontWeight: "700",
+                    marginTop: "25px",
+                  }}
+                >
+                  <span>Total</span>
+
+                  <span>
+                    ₹{cartTotal.toFixed(2)}
+                  </span>
+                </div>
+
+                <button
+                  className="primaryButton"
+                  style={{
+                    width: "100%",
+                    marginTop: "20px",
+                    justifyContent:
+                      "center",
+                  }}
+                  onClick={() =>
+                    alert(
+                      "Checkout will be connected next."
+                    )
+                  }
+                >
+                  Proceed to Checkout
+                </button>
+              </>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </main>
   );
-       }
+        }
